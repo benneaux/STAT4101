@@ -1,0 +1,63 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+```{r setup, include=FALSE}
+require(knitr)
+require(ggplot2)
+require(ggthemes)
+require(dplyr)
+require(tidyr)
+opts_chunk$set(echo =TRUE, tidy = FALSE, dpi = 2000)
+```
+
+Consider the simple symmetric random walks on $\mathbb{Z}/7$ and $\mathbb{Z}$ with $X_0 = 0$. 
+Using a random number generator make graphs of ten paths describing 
+realizations of the Markov chains from $l = 0$ to $l = 100$.
+
+
+
+```{r generate}
+path <-  data.frame(
+  matrix(
+    vector(),
+    101,
+    11,
+    dimnames=list(
+      c(), 
+      c("l", "P01", "P02","P03", "P04","P05", 
+        "P06","P07", "P08","P09", "P10"))
+    ),
+  stringsAsFactors=F)
+
+path[1,1:11] <- 0
+for(i in 1:100){
+  zi = sample(c(-1,1),10, replace = TRUE)
+  path[i+1,1] = i
+  for(j in 2:11){
+    path[i+1,j] = (zi[j-1] + path[i,j]) %% 7
+    }
+}
+path <- filter(path[2:101,])
+```
+```{r manipulation}
+path2 <- path %>%
+  gather(value = n, key = path, -l) %>%
+  mutate(maxmin = case_when((.$l == 100) ~ "2",
+                         (.$l == 1) ~ "1"))
+```
+```{r graphs}
+ggplot(data = path2, 
+       aes(x = l, y = n)) +
+  geom_line() +
+  geom_point(aes(colour = maxmin)) +
+  scale_color_manual(values = c("red","green")) +
+  facet_wrap(~ path, ncol = 2, nrow = 5) +
+  theme_tufte() +
+  theme(legend.position = "") +
+  labs(x = "State",
+       y = "Value",
+       title = "Simple Random Walks on Z/7")
+```
